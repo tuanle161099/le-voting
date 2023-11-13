@@ -13,6 +13,28 @@ contract Atbash {
   uint256 private constant a = 0;
   uint256 private constant b = 7;
 
+  struct Proposal {
+    bytes32 merkleRoot;
+    bytes32 metadata;
+    bytes32[] ballotBoxes;
+    uint createdAt;
+    uint lastVotedAt;
+    address authority;
+    uint[] randomNumbers;
+    address[] candidates;
+  }
+
+  mapping(address => Proposal) public proposals;
+  address[] public proposalList;
+
+  event ProposalCreated(
+    address indexed proposalAddr,
+    address indexed authority,
+    address[] indexed candidates,
+    bytes32 merkle_root,
+    bytes32 metadata
+  );
+
   function ecAdd(
     uint256 _x1,
     uint256 _y1,
@@ -37,5 +59,52 @@ contract Atbash {
     uint256 _y
   ) public pure returns (uint256, uint256) {
     return EllipticCurve.ecMul(_k, _x, _y, a, p);
+  }
+
+  modifier isValidDateStart(uint createdAt) {
+    require(createdAt <= 0, 'Invalid Date Start!');
+    _;
+  }
+
+  modifier isValidDateEnd(uint lastVotedAt) {
+    require(lastVotedAt <= 0, 'Invalid Date End!');
+    _;
+  }
+
+  function initProposal(
+    bytes32 _merkleRoot,
+    bytes32 _metadata,
+    uint _createdAt,
+    uint _lastVotedAt,
+    uint[] memory _randomNumbers,
+    address[] memory _candidates,
+    bytes32[] memory _ballotBoxes,
+    address proposalAddr
+  ) public {
+    proposals[proposalAddr].merkleRoot = _merkleRoot;
+    proposals[proposalAddr].metadata = _metadata;
+    proposals[proposalAddr].createdAt = _createdAt;
+    proposals[proposalAddr].lastVotedAt = _lastVotedAt;
+    proposals[proposalAddr].randomNumbers = _randomNumbers;
+    proposals[proposalAddr].candidates = _candidates;
+    proposals[proposalAddr].ballotBoxes = _ballotBoxes;
+    proposals[proposalAddr].authority = msg.sender;
+
+    emit ProposalCreated(
+      proposalAddr,
+      msg.sender,
+      _candidates,
+      _merkleRoot,
+      _metadata
+    );
+
+    proposalList.push(proposalAddr);
+  }
+
+  function getProposal(
+    address proposalAddr
+  ) public view returns (Proposal memory) {
+    Proposal memory proposal = proposals[proposalAddr];
+    return proposal;
   }
 }
