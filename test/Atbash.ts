@@ -1,6 +1,29 @@
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers'
 import { ethers } from 'hardhat'
 import * as secp256k1 from '@noble/secp256k1'
+import { expect } from 'chai'
+import BN from 'bn.js'
+import { Leaf } from '../src/leaf'
+import { Tree } from '../src/tree'
+import { keccak256 } from 'ethers'
+
+const { data: PRIMARY_DUMMY_METADATA } = Buffer.from(
+  'b2b68b298b9bfa2dd2931cd879e5c9997837209476d25319514b46f7b7911d31',
+  'hex',
+).toJSON()
+
+const privateKey =
+  BigInt(
+    2760942959702842715352604833882983365211307188590135378997097481178767826057,
+  )
+const randomNumber = () => {
+  const min = 1
+  const max = 1_000
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+const pubkey = secp256k1.Point.BASE.multiply(privateKey)
+
+const currentTime = Math.floor(Date.now() / 1000)
 
 describe('Contract', function () {
   // We define a fixture to reuse the same setup in every test.
@@ -8,12 +31,23 @@ describe('Contract', function () {
   // and reset Hardhat Network to that snapshot in every test.
   async function deployFixture() {
     // Contracts are deployed using the first signer/account by default
-    const [owner, receiver] = await ethers.getSigners()
+    const [owner, ...receivers] = await ethers.getSigners()
 
     const Atbash = await ethers.getContractFactory('Atbash')
     const curve = await Atbash.deploy()
+    const proposal = await Atbash.deploy()
 
-    return { curve, owner, receiver }
+    // Tree
+    const leaves: Leaf[] = Array.from(Array(2).keys()).map(
+      (i) =>
+        new Leaf(
+          receivers[i].address,
+          BigInt(i + 1) * 1_000_000_000_000_000_000n,
+        ),
+    )
+    const merkleDistributor = new Tree(leaves)
+
+    return { curve, owner, receivers, proposal, merkleDistributor }
   }
 
   describe('Atbash', async function () {
@@ -21,6 +55,8 @@ describe('Contract', function () {
     const p_2 = P.add(P)
     console.log(P.add(p_2))
     console.log(P.add(p_2).multiply(100000000))
+    const x0 = BigInt(0)
+    const y0 = BigInt(0)
 
     it('add 2 point', async function () {
       const { curve } = await loadFixture(deployFixture)
@@ -44,6 +80,55 @@ describe('Contract', function () {
       console.log(x2, y2)
       const t = await curve.ecMul(100000000, x2, y2)
       console.log(t)
+    })
+
+    it('lenght list proposal should be at zero', async function () {
+      const { proposal } = await loadFixture(deployFixture)
+
+      const length = await proposal.getLength()
+      expect(length).to.equal(0)
+    })
+
+    it('Is create proposal', async function () {
+      const { proposal, owner, receivers, merkleDistributor } =
+        await loadFixture(deployFixture)
+
+      const candidates = Array.from(Array(2).keys()).map(
+        (i) => receivers[i].address,
+      )
+      const merkleRoot = merkleDistributor.root.value
+      const randomsNumber: number[] = []
+
+      const ballotBoxes = await Promise.all(
+        candidates.map(() => {
+          const r = randomNumber()
+          randomsNumber.push(r)
+          const M = secp256k1.Point.ZERO
+          // Compress to bytes32
+          return secp256k1.utils.hmacSha256(
+            M.add(pubkey.multiply(r)).toRawBytes(), // C = M + rG
+          )
+        }),
+      )
+
+      await proposal.initProposal(
+        merkleRoot,
+        Uint8Array.from(PRIMARY_DUMMY_METADATA),
+        currentTime,
+        currentTime + 5000,
+        randomsNumber as any,
+        candidates as any,
+        ballotBoxes as any,
+        owner.address,
+      )
+      console.log('done')
+      const length = await proposal.getLength()
+      const campaign = await proposal.getProposal(owner.address)
+      console.log('campaign', campaign)
+      console.log('length', length)
+
+      expect(length).to.equal(1)
+      expect(campaign.authority).to.equal(owner.address)
     })
   })
 })

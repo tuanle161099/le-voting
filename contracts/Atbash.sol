@@ -17,8 +17,8 @@ contract Atbash {
     bytes32 merkleRoot;
     bytes32 metadata;
     bytes32[] ballotBoxes;
-    uint createdAt;
-    uint lastVotedAt;
+    uint startDate;
+    uint endDate;
     address authority;
     uint[] randomNumbers;
     address[] candidates;
@@ -61,21 +61,21 @@ contract Atbash {
     return EllipticCurve.ecMul(_k, _x, _y, a, p);
   }
 
-  modifier isValidDateStart(uint createdAt) {
-    require(createdAt <= 0, 'Invalid Date Start!');
+  modifier isValidDateStart(uint startDate) {
+    require(startDate == 0, 'Invalid Date Start!');
     _;
   }
 
-  modifier isValidDateEnd(uint lastVotedAt) {
-    require(lastVotedAt <= 0, 'Invalid Date End!');
+  modifier isValidDateEnd(uint endDate) {
+    require(endDate == 0, 'Invalid Date End!');
     _;
   }
 
   function initProposal(
     bytes32 _merkleRoot,
     bytes32 _metadata,
-    uint _createdAt,
-    uint _lastVotedAt,
+    uint _startDate,
+    uint _endDate,
     uint[] memory _randomNumbers,
     address[] memory _candidates,
     bytes32[] memory _ballotBoxes,
@@ -83,8 +83,8 @@ contract Atbash {
   ) public {
     proposals[proposalAddr].merkleRoot = _merkleRoot;
     proposals[proposalAddr].metadata = _metadata;
-    proposals[proposalAddr].createdAt = _createdAt;
-    proposals[proposalAddr].lastVotedAt = _lastVotedAt;
+    proposals[proposalAddr].startDate = _startDate;
+    proposals[proposalAddr].endDate = _endDate;
     proposals[proposalAddr].randomNumbers = _randomNumbers;
     proposals[proposalAddr].candidates = _candidates;
     proposals[proposalAddr].ballotBoxes = _ballotBoxes;
@@ -106,5 +106,9 @@ contract Atbash {
   ) public view returns (Proposal memory) {
     Proposal memory proposal = proposals[proposalAddr];
     return proposal;
+  }
+
+  function getLength() public view returns (uint) {
+    return proposalList.length;
   }
 }
