@@ -1,5 +1,5 @@
 import { getBytes, hexlify, keccak256, zeroPadValue } from 'ethers'
-import { xor } from '../utils'
+import { xor } from './utils'
 
 /**
  * The node in tree.
