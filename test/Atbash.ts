@@ -1,49 +1,86 @@
-import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers'
-import { ethers } from 'hardhat'
 import * as secp256k1 from '@noble/secp256k1'
+import { ethers } from 'hardhat'
+import { describe } from 'mocha'
 
+import { Leaf } from '../src/merkleDistributor/leaf'
+import MerkleDistributor from '../src/merkleDistributor'
+import { Atbash } from '../typechain-types'
+
+const { data: PRIMARY_DUMMY_METADATA } = Buffer.from(
+  'b2b68b298b9bfa2dd2931cd879e5c9997837209476d25319514b46f7b7911d31',
+  'hex',
+).toJSON()
+
+const privateKey =
+  BigInt(
+    49360424492151327609744179530990798614627223631512818354400676568443765553532,
+  )
+const pubkey = secp256k1.Point.BASE.multiply(privateKey)
+
+const randomNumber = () => {
+  const min = 1_000
+  const max = 100_000_000
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
 describe('Contract', function () {
-  // We define a fixture to reuse the same setup in every test.
-  // We use loadFixture to run this setup once, snapshot that state,
-  // and reset Hardhat Network to that snapshot in every test.
-  async function deployFixture() {
-    // Contracts are deployed using the first signer/account by default
-    const [owner, receiver] = await ethers.getSigners()
+  const currentTime = Math.floor(Date.now() / 1000)
+  let contractAtbash: Atbash
+  let merkleDistributor: MerkleDistributor
+  let candidates: string[]
 
-    const Atbash = await ethers.getContractFactory('Atbash')
-    const curve = await Atbash.deploy()
-
-    return { curve, owner, receiver }
+  async function deployAtbash() {
+    const [signer] = await ethers.getSigners()
+    const atbash = await ethers.deployContract('Atbash', [], {
+      gasLimit: 4000000,
+      signer,
+    })
+    await atbash.waitForDeployment()
+    console.log(`AmmContract was deployed to ${atbash.target}`)
+    return atbash.target
   }
 
-  describe('Atbash', async function () {
-    const P = secp256k1.Point.BASE
-    const p_2 = P.add(P)
-    console.log(P.add(p_2))
-    console.log(P.add(p_2).multiply(100000000))
+  before('Before test', async () => {
+    const [signer, ...receivers] = await ethers.getSigners()
+    // nonce = await signer.getNonce();
 
-    it('add 2 point', async function () {
-      const { curve } = await loadFixture(deployFixture)
-      const x =
-        BigInt(
-          55066263022277343669578718895168534326250603453777594175500187360389116729240n,
-        )
-      const y =
-        BigInt(
-          32670510020758816978083085130507043184471273380659243275938904335757337482424n,
-        )
-      const x1 =
-        BigInt(
-          89565891926547004231252920425935692360644145829622209833684329913297188986597n,
-        )
-      const y1 =
-        BigInt(
-          12158399299693830322967808612713398636155367887041628176798871954788371653930n,
-        )
-      const [x2, y2] = await curve.ecAdd(x, y, x1, y1)
-      console.log(x2, y2)
-      const t = await curve.ecMul(100000000, x2, y2)
-      console.log(t)
+    const leaves: Leaf[] = Array.from(Array(2).keys()).map(
+      (i) => new Leaf(receivers[i].address),
+    )
+    merkleDistributor = new MerkleDistributor(leaves)
+    candidates = Array.from(Array(3).keys()).map((i) => receivers[i].address)
+
+    const address = await deployAtbash()
+    contractAtbash = (await ethers.getContractAt(
+      'Atbash',
+      address,
+      signer,
+    )) as any
+  })
+
+  it('Is create proposal', async function () {
+    const merkleRoot = merkleDistributor.root.value
+
+    const randomsNumber: number[] = []
+    const ballotBoxes = candidates.map(() => {
+      const r = randomNumber()
+      randomsNumber.push(r)
+      const zero = secp256k1.Point.ZERO
+      const M = zero.add(pubkey.multiply(r))
+      return { x: M.x, y: M.y }
     })
+
+    await contractAtbash.initProposal(
+      merkleRoot,
+      Uint8Array.from(PRIMARY_DUMMY_METADATA),
+      currentTime,
+      currentTime + 5000,
+      randomsNumber,
+      candidates,
+      ballotBoxes,
+    )
+    const proposalId = await contractAtbash.proposalId()
+    const proposal = await contractAtbash.getProposal(Number(0))
+
+    console.log(proposalId, proposal)
   })
 })
