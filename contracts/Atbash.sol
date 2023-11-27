@@ -119,17 +119,4 @@ contract Atbash {
   function getLength() public view returns (uint) {
     return proposalList.length;
   }
-
-  function vote(
-    address _proposalAddr,
-    address _voteFor,
-    uint[] memory _randomNumbers
-  ) public view {
-    Proposal memory proposal = getProposal(_proposalAddr);
-    BallotBox[] memory ballotBoxes = proposal.ballotBoxes;
-
-    for (uint i = 0; i < proposal.candidates.length; i++) {
-      if (proposal.candidates[i] == _proposalAddr) {}
-    }
-  }
 }
