@@ -34,20 +34,15 @@ describe('Contract', function () {
     const [owner, ...receivers] = await ethers.getSigners()
 
     const Atbash = await ethers.getContractFactory('Atbash')
-    const curve = await Atbash.deploy()
     const proposal = await Atbash.deploy()
 
     // Tree
     const leaves: Leaf[] = Array.from(Array(2).keys()).map(
-      (i) =>
-        new Leaf(
-          receivers[i].address,
-          BigInt(i + 1) * 1_000_000_000_000_000_000n,
-        ),
+      (i) => new Leaf(receivers[i].address),
     )
     const merkleDistributor = new Tree(leaves)
 
-    return { curve, owner, receivers, proposal, merkleDistributor }
+    return { owner, receivers, proposal, merkleDistributor }
   }
 
   describe('Atbash', async function () {
@@ -55,11 +50,9 @@ describe('Contract', function () {
     const p_2 = P.add(P)
     console.log(P.add(p_2))
     console.log(P.add(p_2).multiply(100000000))
-    const x0 = BigInt(0)
-    const y0 = BigInt(0)
 
     it('add 2 point', async function () {
-      const { curve } = await loadFixture(deployFixture)
+      const { proposal } = await loadFixture(deployFixture)
       const x =
         BigInt(
           55066263022277343669578718895168534326250603453777594175500187360389116729240n,
@@ -76,9 +69,9 @@ describe('Contract', function () {
         BigInt(
           12158399299693830322967808612713398636155367887041628176798871954788371653930n,
         )
-      const [x2, y2] = await curve.ecAdd(x, y, x1, y1)
+      const [x2, y2] = await proposal.ecAdd(x, y, x1, y1)
       console.log(x2, y2)
-      const t = await curve.ecMul(100000000, x2, y2)
+      const t = await proposal.ecMul(100000000, x2, y2)
       console.log(t)
     })
 
@@ -96,20 +89,19 @@ describe('Contract', function () {
       const candidates = Array.from(Array(2).keys()).map(
         (i) => receivers[i].address,
       )
-      const merkleRoot = merkleDistributor.root.value
-      const randomsNumber: number[] = []
 
-      const ballotBoxes = await Promise.all(
-        candidates.map(() => {
-          const r = randomNumber()
-          randomsNumber.push(r)
-          const M = secp256k1.Point.ZERO
-          // Compress to bytes32
-          return secp256k1.utils.hmacSha256(
-            M.add(pubkey.multiply(r)).toRawBytes(), // C = M + rG
-          )
-        }),
-      )
+      const merkleRoot = merkleDistributor.root.value
+
+      const randomsNumber: number[] = []
+      const ballotBoxes = candidates.map(() => {
+        const r = randomNumber()
+        randomsNumber.push(r)
+        const M = secp256k1.Point.ZERO
+        return {
+          pointX: M.add(pubkey.multiply(r)).x,
+          pointY: M.add(pubkey.multiply(r)).y,
+        }
+      })
 
       await proposal.initProposal(
         merkleRoot,
@@ -121,11 +113,8 @@ describe('Contract', function () {
         ballotBoxes as any,
         owner.address,
       )
-      console.log('done')
       const length = await proposal.getLength()
       const campaign = await proposal.getProposal(owner.address)
-      console.log('campaign', campaign)
-      console.log('length', length)
 
       expect(length).to.equal(1)
       expect(campaign.authority).to.equal(owner.address)

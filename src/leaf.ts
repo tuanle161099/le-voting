@@ -7,12 +7,8 @@ export class Leaf {
   /**
    * Leaf constructor.
    * @param address Receiver's address.
-   * @param amount Airdroped amount.
    */
-  constructor(
-    public readonly address: string,
-    public readonly amount: bigint,
-  ) {}
+  constructor(public readonly address: string) {}
 
   /**
    * Hash the sibling to the parent value.
@@ -21,11 +17,7 @@ export class Leaf {
   get value(): Uint8Array {
     const abiCoder = new AbiCoder()
     return getBytes(
-      keccak256(
-        toBeArray(
-          abiCoder.encode(['address', 'uint'], [this.address, this.amount]),
-        ),
-      ),
+      keccak256(toBeArray(abiCoder.encode(['address'], [this.address]))),
     )
   }
 
@@ -37,8 +29,6 @@ export class Leaf {
   gte(leaf: Leaf) {
     if (this.address > leaf.address) return 1
     if (this.address < leaf.address) return -1
-    if (this.amount > leaf.amount) return 1
-    if (this.amount < leaf.amount) return -1
     return 0
   }
 }

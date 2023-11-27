@@ -13,10 +13,15 @@ contract Atbash {
   uint256 private constant a = 0;
   uint256 private constant b = 7;
 
+  struct BallotBox {
+    uint256 pointX;
+    uint256 pointY;
+  }
+
   struct Proposal {
     bytes32 merkleRoot;
     bytes32 metadata;
-    bytes32[] ballotBoxes;
+    BallotBox[] ballotBoxes;
     uint startDate;
     uint endDate;
     address authority;
@@ -78,7 +83,7 @@ contract Atbash {
     uint _endDate,
     uint[] memory _randomNumbers,
     address[] memory _candidates,
-    bytes32[] memory _ballotBoxes,
+    BallotBox[] memory _ballotBoxes,
     address proposalAddr
   ) public {
     proposals[proposalAddr].merkleRoot = _merkleRoot;
@@ -87,8 +92,11 @@ contract Atbash {
     proposals[proposalAddr].endDate = _endDate;
     proposals[proposalAddr].randomNumbers = _randomNumbers;
     proposals[proposalAddr].candidates = _candidates;
-    proposals[proposalAddr].ballotBoxes = _ballotBoxes;
     proposals[proposalAddr].authority = msg.sender;
+
+    for (uint i = 0; i < _ballotBoxes.length; i++) {
+      proposals[proposalAddr].ballotBoxes.push(_ballotBoxes[i]);
+    }
 
     emit ProposalCreated(
       proposalAddr,
@@ -110,5 +118,18 @@ contract Atbash {
 
   function getLength() public view returns (uint) {
     return proposalList.length;
+  }
+
+  function vote(
+    address _proposalAddr,
+    address _voteFor,
+    uint[] memory _randomNumbers
+  ) public view {
+    Proposal memory proposal = getProposal(_proposalAddr);
+    BallotBox[] memory ballotBoxes = proposal.ballotBoxes;
+
+    for (uint i = 0; i < proposal.candidates.length; i++) {
+      if (proposal.candidates[i] == _proposalAddr) {}
+    }
   }
 }
