@@ -5,6 +5,7 @@ import { describe } from 'mocha'
 import { Leaf } from '../src/merkleDistributor/leaf'
 import MerkleDistributor from '../src/merkleDistributor'
 import { Atbash } from '../typechain-types'
+import { BGSG } from '../src/utils'
 
 const { data: PRIMARY_DUMMY_METADATA } = Buffer.from(
   'b2b68b298b9bfa2dd2931cd879e5c9997837209476d25319514b46f7b7911d31',
@@ -18,12 +19,18 @@ const privateKey =
 const pubkey = secp256k1.Point.BASE.multiply(privateKey)
 
 const randomNumber = () => {
-  const min = 1_000
-  const max = 100_000_000
-  return Math.floor(Math.random() * (max - min + 1)) + min
+  const r = secp256k1.utils.randomBytes(16)
+
+  return secp256k1.utils.mod(
+    BigInt(`0x${secp256k1.utils.bytesToHex(r)}`),
+    secp256k1.CURVE.P,
+  )
 }
 describe('Contract', function () {
   const currentTime = Math.floor(Date.now() / 1000)
+  const zero = secp256k1.Point.ZERO
+  const P = secp256k1.Point.BASE
+
   let contractAtbash: Atbash
   let merkleDistributor: MerkleDistributor
   let candidates: string[]
@@ -60,11 +67,11 @@ describe('Contract', function () {
   it('Is create proposal', async function () {
     const merkleRoot = merkleDistributor.root.value
 
-    const randomsNumber: number[] = []
+    const randomsNumber: bigint[] = []
     const ballotBoxes = candidates.map(() => {
       const r = randomNumber()
       randomsNumber.push(r)
-      const zero = secp256k1.Point.ZERO
+      console.log(r)
       const M = zero.add(pubkey.multiply(r))
       return { x: M.x, y: M.y }
     })
@@ -78,9 +85,63 @@ describe('Contract', function () {
       candidates,
       ballotBoxes,
     )
-    const proposalId = await contractAtbash.proposalId()
     const proposal = await contractAtbash.getProposal(Number(0))
 
-    console.log(proposalId, proposal)
+    console.log(proposal)
+  })
+
+  it('Is vote for 1 ', async function () {
+    const votFor = candidates[1]
+
+    await Promise.all(
+      Array.from(Array(60).keys()).map(async () => {
+        const randomsNumber: bigint[] = []
+        const votes = candidates.map((candidate) => {
+          const x = randomNumber()
+          randomsNumber.push(x)
+
+          const M = candidate === votFor ? P : zero
+          const C = M.add(pubkey.multiply(x)) // C = M + rG
+          return { x: C.x, y: C.y }
+        })
+
+        await contractAtbash.vote(0, randomsNumber, votes)
+      }),
+    )
+    const proposal = await contractAtbash.getProposal(Number(0))
+
+    console.log(proposal)
+  })
+
+  it('Is vote for  2', async function () {
+    const votFor = candidates[2]
+    const randomsNumber: bigint[] = []
+
+    const votes = candidates.map((candidate) => {
+      const x = randomNumber()
+      randomsNumber.push(x)
+
+      const M = candidate === votFor ? P : zero
+      const C = M.add(pubkey.multiply(x)) // C = M + rG
+      return { x: C.x, y: C.y }
+    })
+
+    await contractAtbash.vote(0, randomsNumber, votes)
+    const proposal = await contractAtbash.getProposal(Number(0))
+
+    console.log(proposal)
+  })
+
+  it('Is get winners', async function () {
+    const ballotBoxesDecrypted: secp256k1.Point[] = []
+    const proposal = await contractAtbash.getProposal(Number(0))
+    proposal.ballotBoxes.forEach(({ x, y }, i) => {
+      const C = new secp256k1.Point(x, y)
+      const R = P.multiply(proposal.randomNumbers[i])
+      const M = C.subtract(R.multiply(privateKey)) //M = C - R * x
+      ballotBoxesDecrypted.push(M)
+    })
+    const totalBallot: number[] = await BGSG(ballotBoxesDecrypted)
+    console.log(totalBallot)
   })
 })

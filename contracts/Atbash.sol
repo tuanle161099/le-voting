@@ -2,10 +2,6 @@
 pragma solidity ^0.8.0;
 import './Secp256k1.sol';
 
-/**
- ** @title Test Helper for the EllipticCurve library
- ** @author Witnet Foundation
- */
 contract Atbash {
   struct Point {
     uint256 x;
@@ -24,7 +20,7 @@ contract Atbash {
   }
 
   mapping(uint256 => Proposal) public proposals;
-  uint256 public proposalId = 0;
+  uint public proposalId = 0;
 
   event InitProposal(
     uint256 proposalId,
@@ -39,7 +35,7 @@ contract Atbash {
     bytes32 _metadata,
     uint _startDate,
     uint _endDate,
-    uint[] memory _randomNumbers,
+    uint256[] memory _randomNumbers,
     address[] memory _candidates,
     Point[] memory _ballotBoxes
   ) public {
@@ -65,6 +61,30 @@ contract Atbash {
       _merkleRoot,
       _metadata
     );
+  }
+
+  function vote(
+    uint _proposalId,
+    uint256[] memory _randomNumbers,
+    Point[] memory votes
+  ) public {
+    Proposal storage proposal = proposals[_proposalId];
+
+    for (uint i = 0; i < proposal.randomNumbers.length; i++) {
+      uint256 newNumber = proposal.randomNumbers[i] + _randomNumbers[i];
+      proposal.randomNumbers[i] = newNumber;
+    }
+
+    for (uint i = 0; i < proposal.ballotBoxes.length; i++) {
+      Point memory oldVote = proposal.ballotBoxes[i];
+      (uint256 x, uint256 y) = Secp256k1.ecAdd(
+        oldVote.x,
+        oldVote.y,
+        votes[i].x,
+        votes[i].y
+      );
+      proposal.ballotBoxes[i] = Point({x: x, y: y});
+    }
   }
 
   function getProposal(uint256 index) public view returns (Proposal memory) {
