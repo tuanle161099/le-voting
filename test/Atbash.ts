@@ -34,6 +34,7 @@ describe('Contract', function () {
   let contractAtbash: Atbash
   let merkleDistributor: MerkleDistributor
   let candidates: string[]
+  let voters: Leaf[]
 
   async function deployAtbash() {
     const [signer] = await ethers.getSigners()
@@ -49,11 +50,11 @@ describe('Contract', function () {
   before('Before test', async () => {
     const [signer, ...receivers] = await ethers.getSigners()
     // nonce = await signer.getNonce();
-
-    const leaves: Leaf[] = Array.from(Array(2).keys()).map(
+    const mineVote = new Leaf(signer.address)
+    voters = Array.from(Array(2).keys()).map(
       (i) => new Leaf(receivers[i].address),
     )
-    merkleDistributor = new MerkleDistributor(leaves)
+    merkleDistributor = new MerkleDistributor([...voters, mineVote])
     candidates = Array.from(Array(3).keys()).map((i) => receivers[i].address)
 
     const address = await deployAtbash()
@@ -90,32 +91,40 @@ describe('Contract', function () {
     console.log(proposal)
   })
 
-  it('Is vote for 1 ', async function () {
-    const votFor = candidates[1]
+  // it('Is vote for 1 ', async function () {
+  //   const votFor = candidates[1]
+  //   const proof = merkleDistributor.prove(voters[0])
+  //   await Promise.all(
+  //     Array.from(Array(2).keys()).map(async () => {
+  //       const randomsNumber: bigint[] = []
+  //       const votes = candidates.map((candidate) => {
+  //         const x = randomNumber()
+  //         randomsNumber.push(x)
 
-    await Promise.all(
-      Array.from(Array(60).keys()).map(async () => {
-        const randomsNumber: bigint[] = []
-        const votes = candidates.map((candidate) => {
-          const x = randomNumber()
-          randomsNumber.push(x)
+  //         const M = candidate === votFor ? P : zero
+  //         const C = M.add(pubkey.multiply(x)) // C = M + rG
+  //         return { x: C.x, y: C.y }
+  //       })
 
-          const M = candidate === votFor ? P : zero
-          const C = M.add(pubkey.multiply(x)) // C = M + rG
-          return { x: C.x, y: C.y }
-        })
+  //       await contractAtbash.vote(
+  //         0,
+  //         randomsNumber,
+  //         votes,
+  //         proof.map((e) => e.value),
+  //       )
+  //     }),
+  //   )
+  //   const proposal = await contractAtbash.getProposal(Number(0))
 
-        await contractAtbash.vote(0, randomsNumber, votes)
-      }),
-    )
-    const proposal = await contractAtbash.getProposal(Number(0))
+  //   console.log(proposal)
+  // })
 
-    console.log(proposal)
-  })
-
-  it('Is vote for  2', async function () {
+  it('Is vote for 2', async function () {
     const votFor = candidates[2]
+    const [signer] = await ethers.getSigners()
+
     const randomsNumber: bigint[] = []
+    const proof = merkleDistributor.prove(new Leaf(signer.address))
 
     const votes = candidates.map((candidate) => {
       const x = randomNumber()
@@ -126,7 +135,39 @@ describe('Contract', function () {
       return { x: C.x, y: C.y }
     })
 
-    await contractAtbash.vote(0, randomsNumber, votes)
+    await contractAtbash.vote(
+      0,
+      randomsNumber,
+      votes,
+      proof.map((e) => e.value),
+    )
+    const proposal = await contractAtbash.getProposal(Number(0))
+
+    console.log(proposal)
+  })
+
+  it('Is vote for 2 the second times', async function () {
+    const votFor = candidates[2]
+    const [signer] = await ethers.getSigners()
+
+    const randomsNumber: bigint[] = []
+    const proof = merkleDistributor.prove(new Leaf(signer.address))
+
+    const votes = candidates.map((candidate) => {
+      const x = randomNumber()
+      randomsNumber.push(x)
+
+      const M = candidate === votFor ? P : zero
+      const C = M.add(pubkey.multiply(x)) // C = M + rG
+      return { x: C.x, y: C.y }
+    })
+
+    await contractAtbash.vote(
+      0,
+      randomsNumber,
+      votes,
+      proof.map((e) => e.value),
+    )
     const proposal = await contractAtbash.getProposal(Number(0))
 
     console.log(proposal)

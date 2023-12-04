@@ -18,7 +18,7 @@ contract Atbash {
     uint256[] randomNumbers;
     address[] candidates;
   }
-
+  mapping(uint => mapping(address => bool)) public receipts;
   mapping(uint256 => Proposal) public proposals;
   uint public proposalId = 0;
 
@@ -66,9 +66,18 @@ contract Atbash {
   function vote(
     uint _proposalId,
     uint256[] memory _randomNumbers,
-    Point[] memory votes
+    Point[] memory votes,
+    bytes32[] calldata proof
   ) public {
+    require(!receipts[proposalId][msg.sender], 'You already voted.');
+
     Proposal storage proposal = proposals[_proposalId];
+
+    bytes32 node = keccak256(abi.encodePacked(msg.sender));
+    for (uint i = 0; i < proof.length; i++) {
+      node = keccak256(abi.encodePacked(node ^ proof[i]));
+    }
+    require(node == proposal.merkleRoot, 'Invalid merkle root.');
 
     for (uint i = 0; i < proposal.randomNumbers.length; i++) {
       uint256 newNumber = proposal.randomNumbers[i] + _randomNumbers[i];
@@ -85,6 +94,8 @@ contract Atbash {
       );
       proposal.ballotBoxes[i] = Point({x: x, y: y});
     }
+
+    receipts[proposalId][msg.sender] = true;
   }
 
   function getProposal(uint256 index) public view returns (Proposal memory) {
