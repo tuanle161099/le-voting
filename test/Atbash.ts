@@ -6,7 +6,6 @@ import { Leaf } from '../src/merkleDistributor/leaf'
 import MerkleDistributor from '../src/merkleDistributor'
 import { Atbash } from '../typechain-types'
 import { BGSG } from '../src/utils'
-import { AbiCoder, keccak256, toBeArray } from 'ethers'
 
 const { data: PRIMARY_DUMMY_METADATA } = Buffer.from(
   'b2b68b298b9bfa2dd2931cd879e5c9997837209476d25319514b46f7b7911d31',
