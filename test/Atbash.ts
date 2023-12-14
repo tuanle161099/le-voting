@@ -6,6 +6,7 @@ import { Leaf } from '../src/merkleDistributor/leaf'
 import MerkleDistributor from '../src/merkleDistributor'
 import { Atbash } from '../typechain-types'
 import { BGSG } from '../src/utils'
+import { AbiCoder, keccak256, toBeArray } from 'ethers'
 
 const { data: PRIMARY_DUMMY_METADATA } = Buffer.from(
   'b2b68b298b9bfa2dd2931cd879e5c9997837209476d25319514b46f7b7911d31',
@@ -17,7 +18,6 @@ const privateKey =
     49360424492151327609744179530990798614627223631512818354400676568443765553532,
   )
 const pubkey = secp256k1.Point.BASE.multiply(privateKey)
-
 const randomNumber = () => {
   const r = secp256k1.utils.randomBytes(16)
 
@@ -30,6 +30,7 @@ describe('Contract', function () {
   const currentTime = Math.floor(Date.now() / 1000)
   const zero = secp256k1.Point.ZERO
   const P = secp256k1.Point.BASE
+  const commitment = randomNumber()
 
   let contractAtbash: Atbash
   let merkleDistributor: MerkleDistributor
@@ -67,12 +68,10 @@ describe('Contract', function () {
 
   it('Is create proposal', async function () {
     const merkleRoot = merkleDistributor.root.value
-
     const randomsNumber: bigint[] = []
     const ballotBoxes = candidates.map(() => {
       const r = randomNumber()
       randomsNumber.push(r)
-      console.log(r)
       const M = zero.add(pubkey.multiply(r))
       return { x: M.x, y: M.y }
     })
@@ -82,24 +81,32 @@ describe('Contract', function () {
       Uint8Array.from(PRIMARY_DUMMY_METADATA),
       currentTime,
       currentTime + 5000,
+      commitment,
       randomsNumber,
       candidates,
       ballotBoxes,
     )
     const proposal = await contractAtbash.getProposal(Number(0))
-
-    console.log(proposal)
   })
 
   // it('Is vote for 1 ', async function () {
   //   const votFor = candidates[1]
   //   const proof = merkleDistributor.prove(voters[0])
+  //   const proof_r: bigint[] = []
+  //   const proof_t: secp256k1.Point[] = []
+
   //   await Promise.all(
   //     Array.from(Array(2).keys()).map(async () => {
   //       const randomsNumber: bigint[] = []
   //       const votes = candidates.map((candidate) => {
   //         const x = randomNumber()
   //         randomsNumber.push(x)
+  //         const v = randomNumber()
+  //         const T = pubkey.multiply(v)
+  //         // r = v + cx
+  //         const r = v + c * x
+  //         proof_r.push(r)
+  //         proof_t.push(T)
 
   //         const M = candidate === votFor ? P : zero
   //         const C = M.add(pubkey.multiply(x)) // C = M + rG
@@ -111,6 +118,8 @@ describe('Contract', function () {
   //         randomsNumber,
   //         votes,
   //         proof.map((e) => e.value),
+  //         proof_r,
+  //         proof_t,
   //       )
   //     }),
   //   )
@@ -122,15 +131,23 @@ describe('Contract', function () {
   it('Is vote for 2', async function () {
     const votFor = candidates[2]
     const [signer] = await ethers.getSigners()
+    const proof_r: bigint[] = []
+    const proof_t: secp256k1.Point[] = []
 
     const randomsNumber: bigint[] = []
     const proof = merkleDistributor.prove(new Leaf(signer.address))
-
     const votes = candidates.map((candidate) => {
       const x = randomNumber()
       randomsNumber.push(x)
 
-      const M = candidate === votFor ? P : zero
+      const v = randomNumber()
+      const T = pubkey.multiply(v)
+      // r = v + cx
+      const r = v + commitment * x
+      proof_r.push(r)
+      proof_t.push(T)
+
+      const M = candidate === votFor ? P.multiply(3) : P.negate()
       const C = M.add(pubkey.multiply(x)) // C = M + rG
       return { x: C.x, y: C.y }
     })
@@ -140,38 +157,40 @@ describe('Contract', function () {
       randomsNumber,
       votes,
       proof.map((e) => e.value),
+      proof_r,
+      proof_t,
     )
-    const proposal = await contractAtbash.getProposal(Number(0))
+    // const proposal = await contractAtbash.getProposal(Number(0))
 
-    console.log(proposal)
+    // console.log(proposal)
   })
 
-  it('Is vote for 2 the second times', async function () {
-    const votFor = candidates[2]
-    const [signer] = await ethers.getSigners()
+  // it('Is vote for 2 the second times', async function () {
+  //   const votFor = candidates[2]
+  //   const [signer] = await ethers.getSigners()
 
-    const randomsNumber: bigint[] = []
-    const proof = merkleDistributor.prove(new Leaf(signer.address))
+  //   const randomsNumber: bigint[] = []
+  //   const proof = merkleDistributor.prove(new Leaf(signer.address))
 
-    const votes = candidates.map((candidate) => {
-      const x = randomNumber()
-      randomsNumber.push(x)
+  //   const votes = candidates.map((candidate) => {
+  //     const x = randomNumber()
+  //     randomsNumber.push(x)
 
-      const M = candidate === votFor ? P : zero
-      const C = M.add(pubkey.multiply(x)) // C = M + rG
-      return { x: C.x, y: C.y }
-    })
+  //     const M = candidate === votFor ? P : zero
+  //     const C = M.add(pubkey.multiply(x)) // C = M + rG
+  //     return { x: C.x, y: C.y }
+  //   })
 
-    await contractAtbash.vote(
-      0,
-      randomsNumber,
-      votes,
-      proof.map((e) => e.value),
-    )
-    const proposal = await contractAtbash.getProposal(Number(0))
+  //   await contractAtbash.vote(
+  //     0,
+  //     randomsNumber,
+  //     votes,
+  //     proof.map((e) => e.value),
+  //   )
+  //   const proposal = await contractAtbash.getProposal(Number(0))
 
-    console.log(proposal)
-  })
+  //   console.log(proposal)
+  // })
 
   it('Is get winners', async function () {
     const ballotBoxesDecrypted: secp256k1.Point[] = []
@@ -185,4 +204,34 @@ describe('Contract', function () {
     const totalBallot: number[] = await BGSG(ballotBoxesDecrypted)
     console.log(totalBallot)
   })
+  // it('Is soundness work', async () => {
+  //   //P = Gx;
+  //   const x = randomNumber()
+  //   const G = pubkey
+  //   const P = G.multiply(x)
+
+  //   //T = Gv;
+  //   const abiCoder = new AbiCoder()
+  //   const v = BigInt(
+  //     keccak256(toBeArray(abiCoder.encode(['string', 'string'], [G.x, G.y]))),
+  //   )
+  //   console.log('v====>', v)
+  //   const T = G.multiply(v)
+
+  //   const c = randomNumber()
+
+  //   // r = v + cx
+  //   const r = v + BigInt(c) * x
+
+  //   console.log(x, r, v)
+
+  //   //=========================================//
+  //   console.log(
+  //     G.multiply(r)
+  //       .subtract(P.multiply(BigInt(c)))
+  //       .equals(T),
+  //   )
+  //   //=========================================//
+  // })
 })
+//0x5FbDB2315678afecb367f032d93F642f64180aa3
