@@ -5,7 +5,7 @@ import 'hardhat-abi-exporter'
 import 'dotenv/config'
 
 const config: HardhatUserConfig = {
-  solidity: '0.8.21',
+  solidity: '0.8.19',
   abiExporter: {
     path: './abi',
     runOnCompile: true,
@@ -14,11 +14,16 @@ const config: HardhatUserConfig = {
     only: [':Atbash$'],
   },
   networks: {
-    sepolia: {
-      url: 'https://sepolia.infura.io/v3/3a3c7d470c4b4d2c8e794139ef79f0d7',
+    victionTestnet: {
+      url: 'https://rpc.testnet.tomochain.com',
+      accounts: [process.env.PRIVKEY || Wallet.createRandom().privateKey],
+    },
+    victionMainnet: {
+      url: 'https://rpc.tomochain.com',
       accounts: [process.env.PRIVKEY || Wallet.createRandom().privateKey],
     },
   },
+  // defaultNetwork: 'victionTestnet',
 }
 
 export default config

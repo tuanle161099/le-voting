@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 import './Secp256k1.sol';
 import 'hardhat/console.sol';
+import 'vrc25/contracts/VRC25.sol';
 
-contract Atbash {
+contract Atbash is VRC25 {
   struct Point {
     uint256 x;
     uint256 y;
@@ -29,6 +30,8 @@ contract Atbash {
   mapping(uint => mapping(address => bool)) public receipts;
   mapping(uint256 => Proposal) public proposals;
   uint public proposalId = 0;
+
+  constructor() VRC25('Atbash', 'AB', 18) {}
 
   event InitProposal(
     uint256 proposalId,
@@ -193,5 +196,11 @@ contract Atbash {
 
   function getProposal(uint256 index) public view returns (Proposal memory) {
     return proposals[index];
+  }
+
+  function _estimateFee(
+    uint256 value
+  ) internal view virtual override returns (uint256) {
+    return value * 0;
   }
 }

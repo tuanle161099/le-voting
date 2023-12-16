@@ -1266,6 +1266,71 @@ at-least-node@^1.0.0:
   resolved "https://registry.yarnpkg.com/at-least-node/-/at-least-node-1.0.0.tgz#602cd4b46e844ad4effc92a8011a3c46e0238dc2"
   integrity sha512-+q/t7Ekv1EDY2l6Gda6LLiX14rU9TV20Wa3ofeQmwPFZbOMo9DXrLbOjFaaclkXKWidIaopwAObQDqwWtGUjqg==
 
+atbash-evm@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/atbash-evm/-/atbash-evm-1.0.1.tgz#c181854f9e82797f582e5506c48c3a2e2a07c0d7"
+  integrity sha512-DlBJa0HVFX0RT6iN3ejVE7NI1FFMGS8QVV4NHu25szzxnLIYDiWdl+DUMb0SSih8i+14PLTN3wIGSyBFAPNbag==
+  dependencies:
+    "@noble/secp256k1" "^1.7.1"
+    "@openzeppelin/contracts" "^5.0.0"
+    ethers "^6.8.0"
+    vrc25 "^1.0.2"
+
+atbash-evm@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/atbash-evm/-/atbash-evm-1.0.2.tgz#2d338c5b5101ac9791cc119bc46c88d3a5696b4e"
+  integrity sha512-L/VMe9EVgKwnsSD33Gf3m4s9g0KNBo1VJXRhZwKvw4/ihFuh/Js9SsCzr+uyTXmJ66Q/rrq58CDdBPUmeqPMBg==
+  dependencies:
+    "@noble/secp256k1" "^1.7.1"
+    "@openzeppelin/contracts" "^5.0.0"
+    atbash-evm "^1.0.1"
+    ethers "^6.8.0"
+    vrc25 "^1.0.2"
+
+atbash-evm@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/atbash-evm/-/atbash-evm-1.0.4.tgz#a18a94af0575b843b1ea49b26c20a4504e62993f"
+  integrity sha512-q8+pwyygIAHqjLDRCU5DfsSEdEKNmRZTk0p+Qn1YpvPZ9JSraIOg31NfA4uoNAwpUi1MpxDDJl8qMUZGTaZWsg==
+  dependencies:
+    "@noble/secp256k1" "^1.7.1"
+    "@openzeppelin/contracts" "^5.0.0"
+    atbash-evm "^1.0.2"
+    ethers "^6.8.0"
+    vrc25 "^1.0.2"
+
+atbash-evm@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/atbash-evm/-/atbash-evm-1.0.5.tgz#ba21e09b4011f663a0cb12f848f323bdbe4c434a"
+  integrity sha512-jXJfZWQmKQRgqRLPBuskgvjRmFte5uUao75cPxgfEBBZmPwIFS5eUu7jeWuXbz15jRhZmlv1MoThbnPmal/aUg==
+  dependencies:
+    "@noble/secp256k1" "^1.7.1"
+    "@openzeppelin/contracts" "^5.0.0"
+    atbash-evm "^1.0.4"
+    ethers "^6.8.0"
+    vrc25 "^1.0.2"
+
+atbash-evm@^1.0.6:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/atbash-evm/-/atbash-evm-1.0.6.tgz#24732bd37962113b23b95a6060303ed153a0f1aa"
+  integrity sha512-pOsqxG149JMvj4L9C9J0YBX17st7e1Hs+wTJeTdxV34dQ2xCPtmCnernr/NsEcsF6Xojy9q/MTNmkvmtlFZENw==
+  dependencies:
+    "@noble/secp256k1" "^1.7.1"
+    "@openzeppelin/contracts" "^5.0.0"
+    atbash-evm "^1.0.5"
+    ethers "^6.8.0"
+    vrc25 "^1.0.2"
+
+atbash-evm@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/atbash-evm/-/atbash-evm-1.0.7.tgz#d14cde139b772eb5c10af176d60988f1ee07d136"
+  integrity sha512-kil0U2UAU7bR7ykiU3+Dk1ls1t3+oWLnsPh5qt1m1ziGKnWTUxM17o5OQqFIAmaF2MHdj3nCVknmG1aor3HlmA==
+  dependencies:
+    "@noble/secp256k1" "^1.7.1"
+    "@openzeppelin/contracts" "^5.0.0"
+    atbash-evm "^1.0.6"
+    ethers "^6.8.0"
+    vrc25 "^1.0.2"
+
 axios@^1.5.1:
   version "1.6.0"
   resolved "https://registry.yarnpkg.com/axios/-/axios-1.6.0.tgz#f1e5292f26b2fd5c2e66876adc5b06cdbd7d2102"
@@ -4329,6 +4394,11 @@ v8-compile-cache-lib@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/v8-compile-cache-lib/-/v8-compile-cache-lib-3.0.1.tgz#6336e8d71965cb3d35a1bbb7868445a7c05264bf"
   integrity sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==
+
+vrc25@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/vrc25/-/vrc25-1.0.2.tgz#76a68a8c17d6448ad55bafc06c79f5a4d0f65cf6"
+  integrity sha512-HNqWI6ARKfbrkisk5QKmcZNiNURwmH45ryw9JknrB0J8B+Ww9SSzp9jgXj860UpsHErydzs5GqXeT0V7iMmVjQ==
 
 vscode-oniguruma@^1.7.0:
   version "1.7.0"

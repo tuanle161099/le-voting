@@ -4,7 +4,7 @@ import { Node } from './node'
 /**
  * The merkle. By the tree, people can generate the proof and locally verify the proof.
  */
-export default class MerkleDistributor {
+export class MerkleDistributor {
   /**
    * The list of leaves.
    */

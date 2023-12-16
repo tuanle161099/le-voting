@@ -1,4 +1,6 @@
 import * as secp256k1 from '@noble/secp256k1'
+import { bytesToHex } from '@noble/hashes/utils'
+import { keccak_256 } from '@noble/hashes/sha3'
 
 /**
  * Xor multiple buffers.
@@ -15,7 +17,7 @@ export const xor = (...arr: Uint8Array[]): Uint8Array => {
   }, init)
 }
 
-export const BGSG = async (points: secp256k1.Point[]) => {
+export const BSGS = async (points: secp256k1.Point[]) => {
   const P = secp256k1.Point.BASE
   const result: number[] = []
   for (const G of points) {
@@ -31,4 +33,23 @@ export const BGSG = async (points: secp256k1.Point[]) => {
     }
   }
   return result
+}
+
+export const toEvmAddress = (pubkey: Uint8Array) => {
+  try {
+    const point = secp256k1.Point.fromHex(pubkey)
+    const pub = point.toRawBytes().subarray(1)
+    const hash = bytesToHex(keccak_256(pub).slice(-20))
+    const address = `0x${hash}`
+    return address
+  } catch (er) {
+    return ''
+  }
+}
+
+export const randomKeypair = () => {
+  const priv = secp256k1.utils.randomPrivateKey()
+  const pubkey = secp256k1.getPublicKey(priv, true)
+  const address = toEvmAddress(pubkey)
+  return { address, priv, pubkey }
 }

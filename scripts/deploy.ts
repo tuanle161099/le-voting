@@ -1,9 +1,9 @@
 import { ethers } from 'hardhat'
 
 async function main() {
-  const [deployer] = await ethers.getSigners()
-
-  const lePay = await ethers.deployContract('Atbash', [deployer])
+  const lePay = await ethers.deployContract('Atbash', [], {
+    gasLimit: 30000000,
+  })
 
   await lePay.waitForDeployment()
 

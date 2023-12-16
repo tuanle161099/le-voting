@@ -1,9 +1,22 @@
 {
-  "name": "hardhat-project",
+  "name": "atbash-evm",
+  "version": "1.0.7",
+  "description": "A Zk Voting protocol",
+  "main": "dist/src/index.js",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "author": {
+    "name": "Tuan Le",
+    "email": "tuanlt161099@gmail.com"
+  },
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test",
-    "build": "hardhat compile && tsc",
+    "clean": "rm -rf ./dist",
+    "build": "yarn clean hardhat compile && tsc",
+    "test:lib": "yarn build && hardhat test test/lib.test.ts",
+    "test:contract": "hardhat test test/Atbash.ts",
     "docs": "typedoc --excludePrivate --excludeProtected ./index.ts",
     "ci:docs": "yarn docs && gh-pages -d docs"
   },
@@ -35,6 +48,8 @@
   "dependencies": {
     "@noble/secp256k1": "^1.7.1",
     "@openzeppelin/contracts": "^5.0.0",
-    "ethers": "^6.8.0"
+    "atbash-evm": "^1.0.7",
+    "ethers": "^6.8.0",
+    "vrc25": "^1.0.2"
   }
 }
