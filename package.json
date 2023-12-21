@@ -1,6 +1,6 @@
 {
   "name": "atbash-evm",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A Zk Voting protocol",
   "main": "dist/src/index.js",
   "publishConfig": {
@@ -50,6 +50,7 @@
     "@openzeppelin/contracts": "^5.0.0",
     "atbash-evm": "^1.0.7",
     "ethers": "^6.8.0",
+    "viem": "^1.20.3",
     "vrc25": "^1.0.2"
   }
 }

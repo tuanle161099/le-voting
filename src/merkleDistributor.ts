@@ -1,3 +1,4 @@
+import { hexToBytes, bytesToHex, size } from 'viem'
 import { Leaf } from './leaf'
 import { Node } from './node'
 
@@ -16,6 +17,14 @@ export class MerkleDistributor {
    */
   constructor(leaves: Leaf[]) {
     this.leaves = leaves.sort((a, b) => a.gte(b))
+  }
+
+  static serialize = ({ address }: Leaf): Uint8Array => {
+    return Buffer.from(hexToBytes(address as any, { size: 20 }))
+  }
+
+  static deserialize = (buf: Uint8Array): Leaf => {
+    return new Leaf(bytesToHex(buf))
   }
 
   /**
@@ -76,5 +85,16 @@ export class MerkleDistributor {
     let node = new Node(leaf.value)
     for (let i = 0; i < proof.length; i++) node = node.hash(proof[i])
     return this.root.eq(node)
+  }
+
+  toBuffer = () => {
+    return Buffer.concat(this.leaves.map(MerkleDistributor.serialize))
+  }
+
+  static fromBuffer = (buf: Buffer): MerkleDistributor => {
+    let re: Leaf[] = []
+    for (let i = 0; i < buf.length; i = i + 20)
+      re.push(MerkleDistributor.deserialize(buf.subarray(i, i + 20)))
+    return new MerkleDistributor(re)
   }
 }
